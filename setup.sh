@@ -589,7 +589,7 @@ stealth:
   max_padding: 128
   keepalive_jitter: 2
   conn_jitter_ms: 500
-  burst_split: true
+  burst_split: ${STEALTH_BURST_SPLIT:-false}
   max_burst_size: 4096
   fake_traffic: true
   fake_traffic_interval: 30
@@ -671,7 +671,7 @@ stealth:
   max_padding: 128
   keepalive_jitter: 2
   conn_jitter_ms: 500
-  burst_split: true
+  burst_split: ${STEALTH_BURST_SPLIT:-false}
   max_burst_size: 4096
 
 advanced:
@@ -776,8 +776,9 @@ install_server_automatic() {
     # PTPlus: 4 MB buffers for gigabit support
     SMUX_KEEPALIVE=2; SMUX_MAXRECV=4194304; SMUX_MAXSTREAM=4194304; SMUX_FRAMESIZE=4096
     TCP_NODELAY="true"; TCP_KEEPALIVE=5; TCP_READBUFFER=4194304; TCP_WRITEBUFFER=4194304
-    MAX_CONNECTIONS=500; MAX_STREAMS=512
+    MAX_CONNECTIONS=1024; MAX_STREAMS=512
     OBFS_ENABLED="true"; OBFS_MIN_PAD=16; OBFS_MAX_PAD=64; OBFS_MIN_DELAY=0; OBFS_MAX_DELAY=0
+    STEALTH_BURST_SPLIT="false"
 
     # Write config
     mkdir -p "$CONFIG_DIR"

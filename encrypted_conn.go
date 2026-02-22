@@ -133,8 +133,8 @@ func (c *EncryptedConn) burstWrite(data []byte) (int, error) {
 	}
 
 	for len(remaining) > 0 {
-		// Random chunk size: 512 to maxBurst bytes
-		chunkSize := 512 + secureRandInt(maxBurst-512+1)
+		// Random chunk size: 2KB to maxBurst bytes
+		chunkSize := 2048 + secureRandInt(maxBurst-2048+1)
 		if chunkSize > len(remaining) {
 			chunkSize = len(remaining)
 		}
@@ -144,11 +144,6 @@ func (c *EncryptedConn) burstWrite(data []byte) (int, error) {
 			return total, err
 		}
 		remaining = remaining[chunkSize:]
-
-		// Tiny delay between chunks (looks like HTTP chunked transfer)
-		if len(remaining) > 0 {
-			time.Sleep(time.Duration(1+secureRandInt(5)) * time.Millisecond)
-		}
 	}
 	return total, nil
 }

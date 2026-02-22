@@ -331,7 +331,10 @@ func applyProfile(c *Config) {
 				c.Paths[i].DialTimeout = 10
 			}
 		}
-
+		c.Stealth.BurstSplit = false
+		if c.Advanced.MaxConnections < 1024 {
+			c.Advanced.MaxConnections = 1024
+		}
 	case "gaming", "latency":
 		c.Smux.KeepAlive = 1
 		c.Advanced.TCPKeepAlive = 2
