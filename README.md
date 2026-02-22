@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="banner.png" alt="PTPlus Banner" width="100%"/>
+</p>
+
 # PTPlus (PicoTun+) v2.5.0
 
 > **High-performance encrypted reverse tunnel** with DPI bypass, gigabit-speed support, TLS transport, and multi-port load balancing.
