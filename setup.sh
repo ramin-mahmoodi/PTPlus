@@ -458,16 +458,16 @@ configure_advanced_settings() {
 
     if [ "$adv_choice" != "2" ]; then
         # Optimized defaults
-        SMUX_KEEPALIVE=1
-        SMUX_MAXRECV=524288
-        SMUX_MAXSTREAM=524288
-        SMUX_FRAMESIZE=2048
+        SMUX_KEEPALIVE=2
+        SMUX_MAXRECV=4194304
+        SMUX_MAXSTREAM=4194304
+        SMUX_FRAMESIZE=4096
         TCP_NODELAY="true"
-        TCP_KEEPALIVE=3
-        TCP_READBUFFER=32768
-        TCP_WRITEBUFFER=32768
-        MAX_CONNECTIONS=300
-        echo -e "    ${GREEN}Using optimized defaults${NC}"
+        TCP_KEEPALIVE=5
+        TCP_READBUFFER=4194304
+        TCP_WRITEBUFFER=4194304
+        MAX_CONNECTIONS=500
+        echo -e "  ${GREEN}Using optimized defaults (4MB buffers)${NC}"
         return
     fi
 
@@ -729,15 +729,15 @@ install_server_automatic() {
 
     echo ""
     echo -e "  ${WHITE}Select Transport:${NC}"
-    echo "    1) httpmux   - HTTP Mimicry (DPI bypass)"
-    echo "    2) httpsmux  - HTTPS Mimicry (TLS + DPI bypass)"
-    echo "    3) tcpmux    - Simple TCP"
+    echo "    1) tcpmux    - Simple TCP"
+    echo "    2) httpmux   - HTTP Mimicry (DPI bypass)"
+    echo "    3) httpsmux  - HTTPS Mimicry (TLS + DPI bypass)"
     echo ""
     read -p "  Choice [1-3]: " trans_choice
     case $trans_choice in
-        1) TRANSPORT="httpmux" ;;
-        2) TRANSPORT="httpsmux" ;;
-        3) TRANSPORT="tcpmux" ;;
+        1) TRANSPORT="tcpmux" ;;
+        2) TRANSPORT="httpmux" ;;
+        3) TRANSPORT="httpsmux" ;;
         *) TRANSPORT="httpmux" ;;
     esac
 
@@ -984,15 +984,15 @@ install_client_automatic() {
 
     echo ""
     echo -e "  ${WHITE}Select Transport (must match server):${NC}"
-    echo "    1) httpmux   - HTTP Mimicry"
-    echo "    2) httpsmux  - HTTPS Mimicry"
-    echo "    3) tcpmux    - Simple TCP"
+    echo "    1) tcpmux    - Simple TCP"
+    echo "    2) httpmux   - HTTP Mimicry"
+    echo "    3) httpsmux  - HTTPS Mimicry"
     echo ""
     read -p "  Choice [1-3]: " trans_choice
     case $trans_choice in
-        1) TRANSPORT="httpmux" ;;
-        2) TRANSPORT="httpsmux" ;;
-        3) TRANSPORT="tcpmux" ;;
+        1) TRANSPORT="tcpmux" ;;
+        2) TRANSPORT="httpmux" ;;
+        3) TRANSPORT="httpsmux" ;;
         *) TRANSPORT="httpmux" ;;
     esac
 
@@ -1019,11 +1019,11 @@ install_client_automatic() {
         *) POOL_SIZE=4 ;;
     esac
 
-    # v2.5 defaults
+    # v2.5 defaults (4MB buffers)
     PROFILE="speed"
     VERBOSE="true"
-    SMUX_KEEPALIVE=2; SMUX_MAXRECV=1048576; SMUX_MAXSTREAM=1048576; SMUX_FRAMESIZE=4096
-    TCP_NODELAY="true"; TCP_KEEPALIVE=5; TCP_READBUFFER=65536; TCP_WRITEBUFFER=65536
+    SMUX_KEEPALIVE=2; SMUX_MAXRECV=4194304; SMUX_MAXSTREAM=4194304; SMUX_FRAMESIZE=4096
+    TCP_NODELAY="true"; TCP_KEEPALIVE=5; TCP_READBUFFER=4194304; TCP_WRITEBUFFER=4194304
     OBFS_ENABLED="true"; OBFS_MIN_PAD=16; OBFS_MAX_PAD=64; OBFS_MIN_DELAY=0; OBFS_MAX_DELAY=0
     HTTP_DOMAIN="www.google.com"
     HTTP_PATH="/search"
