@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ═══════════════════════════════════════════════════════════════
-# PicoTun — Encrypted Reverse Tunnel
-# github.com/amir6dev/PicoTun
+# PTPlus — Encrypted Reverse Tunnel (PicoTun+)
+# github.com/ramin-mahmoodi/PTPlus
 # ═══════════════════════════════════════════════════════════════
 
 CYAN='\033[0;36m'
@@ -17,7 +17,7 @@ NC='\033[0m'
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/picotun"
 SYSTEMD_DIR="/etc/systemd/system"
-GITHUB_REPO="amir6dev/PicoTun"
+GITHUB_REPO="ramin-mahmoodi/PTPlus"
 LATEST_RELEASE_API="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
 
 # ═════════════════════════════════════════
@@ -28,8 +28,8 @@ show_banner() {
     clear
     echo ""
     echo -e "${CYAN}══════════════════════════════════════════${NC}"
-    echo -e "     ${WHITE}${BOLD}PicoTun${NC}  ${GRAY}— @amir6dev${NC}"
-    echo -e "     ${GRAY}Session Pool | AES-256-GCM | Anti-DPI${NC}"
+    echo -e "     ${WHITE}${BOLD}PTPlus${NC}  ${GRAY}— @ramin-mahmoodi${NC}"
+    echo -e "     ${GRAY}Gigabit Speed | AES-256-GCM | Anti-DPI${NC}"
     echo -e "${CYAN}══════════════════════════════════════════${NC}"
     echo ""
 }
@@ -157,7 +157,7 @@ create_systemd_service() {
     local MODE=$1
     cat > "$SYSTEMD_DIR/picotun-${MODE}.service" << SVCEOF
 [Unit]
-Description=PicoTun ${MODE^} (@amir6dev)
+Description=PTPlus ${MODE^} (@ramin-mahmoodi)
 After=network.target
 
 [Service]
@@ -773,8 +773,9 @@ install_server_automatic() {
     # v2.5 optimized defaults
     PROFILE="speed"
     VERBOSE="true"
-    SMUX_KEEPALIVE=2; SMUX_MAXRECV=1048576; SMUX_MAXSTREAM=1048576; SMUX_FRAMESIZE=4096
-    TCP_NODELAY="true"; TCP_KEEPALIVE=5; TCP_READBUFFER=65536; TCP_WRITEBUFFER=65536
+    # PTPlus: 4 MB buffers for gigabit support
+    SMUX_KEEPALIVE=2; SMUX_MAXRECV=4194304; SMUX_MAXSTREAM=4194304; SMUX_FRAMESIZE=4096
+    TCP_NODELAY="true"; TCP_KEEPALIVE=5; TCP_READBUFFER=4194304; TCP_WRITEBUFFER=4194304
     MAX_CONNECTIONS=500; MAX_STREAMS=512
     OBFS_ENABLED="true"; OBFS_MIN_PAD=16; OBFS_MAX_PAD=64; OBFS_MIN_DELAY=0; OBFS_MAX_DELAY=0
 
