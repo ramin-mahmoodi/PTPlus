@@ -188,6 +188,7 @@ session_timeout: 60
 
 ### PTPlus v2.5.0 *(this release)*
 - ✅ **Gigabit speed fix** — relay buffer 32 KB → 256 KB, TCP/smux buffers 64 KB/1 MB → 4 MB
+- ✅ **BurstSplit latency fix** — removed artificial 1-5ms delay in stealth data transfer (resolved 50Mbps cap)
 - ✅ **httpsmux TLS fix** — server now runs TLS listener for httpsmux/wssmux transports
 - ✅ Multi-port load balancer
 - ✅ DPI stealth mode (padding, jitter, fake traffic)
