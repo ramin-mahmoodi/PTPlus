@@ -1,0 +1,57 @@
+name: Build & Release (picotun)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.1"
+          cache: true
+
+      - name: Tidy & Download deps
+        run: |
+          go mod tidy
+          go mod download
+
+      - name: Build linux amd64
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          mkdir -p dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o dist/picotun ./cmd/picotun
+          tar -czf "dist/picotun-${VERSION}-linux-amd64.tar.gz" -C dist picotun
+          sha256sum "dist/picotun-${VERSION}-linux-amd64.tar.gz" > "dist/picotun-${VERSION}-linux-amd64.sha256"
+
+      - name: Build linux arm64
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          mkdir -p dist2
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+            go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o dist2/picotun ./cmd/picotun
+          tar -czf "dist/picotun-${VERSION}-linux-arm64.tar.gz" -C dist2 picotun
+          sha256sum "dist/picotun-${VERSION}-linux-arm64.tar.gz" > "dist/picotun-${VERSION}-linux-arm64.sha256"
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/picotun-*-linux-amd64.tar.gz
+            dist/picotun-*-linux-amd64.sha256
+            dist/picotun-*-linux-arm64.tar.gz
+            dist/picotun-*-linux-arm64.sha256
+          generate_release_notes: true

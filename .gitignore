@@ -1,0 +1,24 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+picotun
+PTPlus
+
+# Test binary
+*.test
+
+# Output directory
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
