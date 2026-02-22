@@ -1,74 +1,68 @@
-# PicoTun v2.5
+# PTPlus (PicoTun+) v2.5.0
 
-Encrypted Reverse Tunnel with DPI Bypass, Multi-Port Load Balancing, and High-Capacity Support.
+> **High-performance encrypted reverse tunnel** with DPI bypass, gigabit-speed support, TLS transport, and multi-port load balancing.
 
-## What's New in v2.5
+---
 
-### Multi-Port Load Balancer
-Server can listen on multiple tunnel ports simultaneously. Multiple kharej servers can connect through different ports on the same Iran server.
+## What's New in PTPlus v2.5.0
+
+### 🚀 Gigabit Speed Support
+- **relay buffer**: 32 KB → **256 KB** — eliminates syscall overhead at Gbps speeds  
+- **TCP socket buffers**: 64 KB → **4 MB** — removes bandwidth ceiling caused by buffer/RTT limits  
+- **smux flow-control buffers**: 1 MB → **4 MB** — prevents smux stall under heavy load
+
+> **Why 64 KB was the bottleneck**: TCP throughput ≈ `buffer / RTT`. At 10 ms RTT, 64 KB caps speed at ~51 Mbps. 4 MB buffers raise the ceiling beyond 1 Gbps.
+
+### 🔒 httpsmux / wssmux (TLS Transport) — Fixed
+Server now correctly starts a **TLS listener** when `transport: httpsmux` or `transport: wssmux` is configured. Previously the server used a plain HTTP listener, which could not process the client's TLS handshake.
 
 ```yaml
-# Server config
+# Server config for httpsmux
+transport: httpsmux
+cert_file: /etc/picotun/cert.pem
+key_file:  /etc/picotun/key.pem
+```
+
+Generate a self-signed cert:
+```bash
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 3650 -nodes -subj "/CN=yourdomain.com"
+```
+
+### 🌐 Multi-Port Load Balancer
+Listen on multiple ports simultaneously. Multiple kharej servers connect through different ports on the same Iran server.
+
+```yaml
 listen_ports:
   - "0.0.0.0:2020"
   - "0.0.0.0:2021"
   - "0.0.0.0:2022"
 ```
 
-### Port Mapping Fix
-Fixed smux stream confusion when port mappings are configured. Streams are now tagged with type bytes to prevent misrouting between forward and reverse proxy streams.
-
-### DPI Stealth Mode
-New stealth settings that make tunnel traffic harder for DPI to detect:
+### 🛡️ DPI Stealth Mode
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `random_padding` | `true` | Variable-length padding per packet |
 | `keepalive_jitter` | `2` | Randomize keepalive timing ±2s |
 | `conn_jitter_ms` | `500` | Random delay between connections |
-| `burst_split` | `true` | Split large writes into random chunks |
-| `fake_traffic` | `true` | Periodic fake HTTP data on idle sessions |
+| `burst_split` | `false` | Split large writes into random chunks |
+| `fake_traffic` | `false` | Periodic fake HTTP data on idle sessions |
 
-```yaml
-stealth:
-  random_padding: true
-  min_padding: 16
-  max_padding: 128
-  keepalive_jitter: 2
-  conn_jitter_ms: 500
-  burst_split: true
-  max_burst_size: 4096
-  fake_traffic: true
-  fake_traffic_interval: 30
-```
+### ⚡ High-Capacity (120+ Users)
+- Frame size: 2 KB → 4 KB  
+- Stream limit: 200 → 512 per session (configurable)  
+- Max connections: 300 → 500  
+- Keepalive timeout: ×10 → ×15 (less aggressive)
 
-### High-Capacity (120+ Users)
-- Smux buffers: 512KB → 1MB
-- Frame size: 2KB → 4KB
-- TCP buffers: 32KB → 64KB
-- Stream limit: 200 → 512 per session (configurable)
-- Max connections: 300 → 500
-- Keepalive timeout: 10x → 15x (less aggressive)
-
-### Connection Stability
-- Graduated reconnection backoff (less micro-disconnects)
-- Random reconnection jitter (prevents thundering herd)
-- Longer session timeouts (15s → 30s)
-- Better zombie session detection
-- Random TLS fingerprint rotation (Chrome/Firefox/Edge/Safari)
-
-### Config Auto-Migration
-When updating PicoTun, old config files are automatically migrated to v2.5 format:
-- Old buffer sizes → new defaults
-- Old keepalive values → improved values
-- Stealth mode enabled automatically
-- Config version tracked
+---
 
 ## Installation
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/amir6dev/PicoTun/main/setup.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/ramin-mahmoodi/PTPlus/master/setup.sh)
 ```
+
+---
 
 ## Architecture
 
@@ -79,16 +73,15 @@ Users ──→ Iran Server (multi-port) ──smux──→ Kharej Server ─�
               :2022 ←── kharej-3
 ```
 
+---
+
 ## Configuration
 
-### Server (Iran)
+### Server (Iran) — httpmux (plain HTTP)
 ```yaml
 config_version: 2
 mode: "server"
 listen: "0.0.0.0:2020"
-listen_ports:
-  - "0.0.0.0:2020"
-  - "0.0.0.0:2021"
 transport: "httpmux"
 psk: "your-secret-key"
 profile: "speed"
@@ -106,38 +99,53 @@ advanced:
   max_connections: 500
 ```
 
+### Server (Iran) — httpsmux (TLS)
+```yaml
+config_version: 2
+mode: "server"
+listen: "0.0.0.0:443"
+transport: "httpsmux"
+cert_file: /etc/picotun/cert.pem
+key_file:  /etc/picotun/key.pem
+psk: "your-secret-key"
+profile: "speed"
+
+maps:
+  - { type: tcp, bind: "8443", target: "127.0.0.1:8443" }
+```
+
 ### Client (Kharej)
 ```yaml
 config_version: 2
 mode: "client"
 psk: "your-secret-key"
-transport: "httpmux"
+transport: "httpmux"   # or "httpsmux"
 profile: "speed"
 
 paths:
   - transport: "httpmux"
     addr: "iran-ip:2020"
     connection_pool: 4
-
-stealth:
-  random_padding: true
-  burst_split: true
 ```
+
+---
 
 ## Profiles
 
 | Profile | Pool | Keepalive | Use Case |
 |---------|------|-----------|----------|
-| speed | 4 | 2s | Downloads, general |
-| balanced | 4 | 2s | Mixed usage |
-| gaming | 6 | 1s | Low latency games |
-| streaming | 4 | 2s | Video/audio |
-| lowcpu | 2 | 5s | Low-end servers |
+| `speed` | 4 | 2s | Downloads, general |
+| `balanced` | 4 | 2s | Mixed usage |
+| `gaming` | 6 | 1s | Low latency games |
+| `streaming` | 4 | 2s | Video/audio |
+| `lowcpu` | 2 | 5s | Low-end servers |
+
+---
 
 ## Troubleshooting
 
-### DPI blocks IP daily
-Enable all stealth features:
+### DPI blocks connection
+Enable stealth features:
 ```yaml
 stealth:
   random_padding: true
@@ -148,22 +156,21 @@ stealth:
   fake_traffic_interval: 20
 ```
 
-### Speed drops with many users
-Increase capacity settings:
+### Speed still low
+Check your config has the updated defaults (PTPlus auto-migrates old configs). For manual override:
 ```yaml
 smux:
-  max_recv: 2097152   # 2MB
-  max_stream: 2097152
-  frame_size: 8192    # 8KB
+  max_recv: 4194304    # 4MB
+  max_stream: 4194304
 advanced:
-  max_streams_per_session: 1024
-  max_connections: 1000
-  tcp_read_buffer: 131072   # 128KB
-  tcp_write_buffer: 131072
+  tcp_read_buffer: 4194304
+  tcp_write_buffer: 4194304
 ```
 
+### httpsmux not connecting
+Make sure `cert_file` and `key_file` are set on the **server** side. The client uses `InsecureSkipVerify` so a self-signed cert is fine.
+
 ### Gaming micro-disconnects
-Use gaming profile and increase keepalive timeout:
 ```yaml
 profile: "gaming"
 smux:
@@ -171,26 +178,22 @@ smux:
 session_timeout: 60
 ```
 
-### Port mapping not working
-Make sure the target service is running on the kharej server and accessible locally. Check logs with:
-```bash
-journalctl -u picotun-server -f
-journalctl -u picotun-client -f
-```
+---
 
 ## Version History
 
-### v2.5.0
-- Multi-port load balancer
-- Port mapping smux fix  
-- DPI stealth mode
-- 120+ user support
-- Connection stability improvements
-- Config auto-migration
-- Random TLS fingerprint rotation
+### PTPlus v2.5.0 *(this release)*
+- ✅ **Gigabit speed fix** — relay buffer 32 KB → 256 KB, TCP/smux buffers 64 KB/1 MB → 4 MB
+- ✅ **httpsmux TLS fix** — server now runs TLS listener for httpsmux/wssmux transports
+- ✅ Multi-port load balancer
+- ✅ DPI stealth mode (padding, jitter, fake traffic)
+- ✅ Port mapping smux stream-tag fix
+- ✅ 120+ user support
+- ✅ Config auto-migration
+- ✅ Random TLS fingerprint rotation (Chrome / Firefox / Edge / Safari)
 
 ### v2.4.0
 - Performance profiles
 - Multi-IP failover
-- EOF handling fix
 - TLS fragmentation
+- EOF handling fix
